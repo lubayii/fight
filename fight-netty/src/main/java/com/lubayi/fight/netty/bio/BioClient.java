@@ -37,7 +37,7 @@ public class BioClient {
                 os.write(message.getBytes());
                 os.flush();
             }
-            Thread.sleep(10000);
+            Thread.sleep(1000);
             socket.close();
         } catch (Exception e) {
             e.printStackTrace();
