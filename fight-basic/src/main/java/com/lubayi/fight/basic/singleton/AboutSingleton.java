@@ -38,6 +38,20 @@ public class AboutSingleton {
     }
 }
 
+/**
+ * <h3> <a name="name">单例模式</a> </h3>
+ * <p>单例模式，保证一个类仅有一个实例，并且提供一个访问这个实例的全局访问点。
+ *
+ * <p>Singleton 类只有一个私有的静态成员变量 instance，用于保存唯一的实例；构造函数被声明为私有，防止其他类直接实例化 Singleton；
+ * getInstance() 方法是一个公有的静态方法，通过该方法获取唯一的实例 instance。
+ * <p>即单例模式：1、成员是 私有的静态的；2、构造方法是 私有的；3、对外暴露的获取访问是 公有的静态的
+ *
+ * <p>分类：
+ * 饿汉式单例模式：类加载就会导致该实例对象被创建；
+ * 懒汉式单例模式：类加载不会导致该实例对象被创建，而是首次使用该对象时被创建。
+ *
+ */
+// 饿汉式实现方式1
 class HungrySingleton {
     private static HungrySingleton hungrySingleton = new HungrySingleton();
 
@@ -48,6 +62,7 @@ class HungrySingleton {
     }
 
 }
+// 饿汉式实现方式2
 class HungrySingleton2 {
     private static HungrySingleton2 hungrySingleton = null;
 
@@ -61,14 +76,15 @@ class HungrySingleton2 {
         return hungrySingleton;
     }
 }
-
+// 懒汉式实现方式：线程不安全的
 class LazySingleton {
     private static LazySingleton lazySingleton;
 
     private LazySingleton() {}
 
     public static LazySingleton getLazySingleton() {
-        synchronized (LazySingleton.class) {
+        // 每次去获取对象都需要先获取锁，导致并发性能非常的差，所以要对加锁优化 ——> 即 双重检验加锁
+        synchronized (LazySingleton.class) {    // 通过加锁，解决懒汉式线程不安全问题
             if (lazySingleton == null) {
                 lazySingleton = new LazySingleton();
             }
@@ -77,7 +93,7 @@ class LazySingleton {
     }
 
 }
-
+// 双重检验加锁
 class DoubleCheckLockSingleton implements Serializable {
 
     private static volatile DoubleCheckLockSingleton singleton;
@@ -93,6 +109,18 @@ class DoubleCheckLockSingleton implements Serializable {
             }
         }
         return singleton;
+    }
+
+    /**
+     * 序列化与反序列化 破坏单例模式的解决方案
+     * <p>会破坏的原因：readObject() 方法执行时，会通过反射调用无参数的构造方法创建一个新的对象，
+     * 从而导致每次返回的对象都不一致。
+     * <p>解决方法：在 readObject() 方法中调用的有这么两个方法：hasReadResolveMethod()、invokeReadResolve()
+     * <p><tt>hasReadResolveMethod()</tt>: 表示如果实现了 Serializable 或者 Externalizable 接口的类（即实现序列化的类）中包含 readResolve() 方法，则返回true
+     * <p><tt>invokeReadResolve()</tt>: 通过反射的方式调用要被反序列化的类的 readResolve() 方法。
+     */
+    private Object readResolve() {
+        return getSingleton();
     }
 
 }
