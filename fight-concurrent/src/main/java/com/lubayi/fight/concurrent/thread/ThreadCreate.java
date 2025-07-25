@@ -1,4 +1,4 @@
-package com.lubayi.fight.concurrent;
+package com.lubayi.fight.concurrent.thread;
 
 /**
  * 创建线程的方式
