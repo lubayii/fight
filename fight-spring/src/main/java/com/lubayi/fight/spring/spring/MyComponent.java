@@ -1,4 +1,4 @@
-package com.lubayi.fight.spring;
+package com.lubayi.fight.spring.spring;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

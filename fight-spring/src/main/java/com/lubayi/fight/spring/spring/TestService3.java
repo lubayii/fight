@@ -1,4 +1,4 @@
-package com.lubayi.fight.spring;
+package com.lubayi.fight.spring.spring;
 
 /**
  * @author lubayi

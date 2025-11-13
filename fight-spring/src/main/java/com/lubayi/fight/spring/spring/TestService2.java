@@ -1,6 +1,4 @@
-package com.lubayi.fight.spring;
-
-import org.springframework.stereotype.Component;
+package com.lubayi.fight.spring.spring;
 
 /**
  * @author lubayi

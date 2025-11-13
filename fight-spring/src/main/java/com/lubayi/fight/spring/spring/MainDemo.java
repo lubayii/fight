@@ -1,4 +1,4 @@
-package com.lubayi.fight.spring;
+package com.lubayi.fight.spring.spring;
 
 import org.junit.Test;
 import org.springframework.beans.factory.support.SimpleBeanDefinitionRegistry;

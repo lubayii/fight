@@ -1,4 +1,4 @@
-package com.lubayi.fight.spring;
+package com.lubayi.fight.spring.spring;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
