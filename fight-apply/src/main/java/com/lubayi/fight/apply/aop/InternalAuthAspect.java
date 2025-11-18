@@ -59,3 +59,22 @@ public class InternalAuthAspect {
     }
 
 }
+
+/*
+@annotation：AOP中，常用的拦截方法的切点表达式，用来匹配 所有带有指定注解的方法。
+
+两种写法：
+1、@annotation(注解类路径) —— 只拦截，不读参数
+@Before("@annotation(com.lubayi.fight.apply.aop.InternalAuth)")
+public void internalAuthBefore() {}
+
+2、@annotation(变量名) + 方法参数 —— 拦截并获取注解对象
+@InternalAuth("test")
+public void testMethod() {}
+
+@Before("@annotation(internalAuth)")
+public void internalAuthBefore(InternalAuth internalAuth) {
+    String value = internalAuth.value(); // value值为 test，而非默认的 X-Internal-Token
+}
+
+ */
