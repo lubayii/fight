@@ -40,4 +40,20 @@ public class SmsCodeUtil {
         redisTemplate.opsForValue().set(SMS_CODE_PREFIX + phone, smsCode, CODE_EXPIRE, TimeUnit.SECONDS);
     }
 
+    /**
+     * 验证验证码
+     * @param phone 手机号码
+     * @param inputCode 用户输入的验证码
+     * @return 验证结果
+     */
+    public boolean verifyCode(String phone, String inputCode) {
+        String key = SMS_CODE_PREFIX + phone;
+        String code = (String) redisTemplate.opsForValue().get(key);
+        boolean isValid = code.equals(inputCode);
+        if (isValid) {
+            redisTemplate.delete(key);
+        }
+        return isValid;
+    }
+
 }

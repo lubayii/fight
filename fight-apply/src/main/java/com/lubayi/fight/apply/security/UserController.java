@@ -1,5 +1,6 @@
 package com.lubayi.fight.apply.security;
 
+import com.lubayi.fight.apply.security.repository.param.LoginParam;
 import com.lubayi.fight.apply.security.repository.param.RegisterParam;
 import com.lubayi.fight.apply.security.service.UserService;
 import jakarta.validation.Valid;
@@ -28,6 +29,12 @@ public class UserController {
 
     @GetMapping("/smsCode")
     public ResponseEntity<?> getSmsCode(@RequestParam("phone") String phone) {
+        userService.getSmsCode(phone);
+        return ResponseEntity.ok(Map.of("code", 200, "message", "The SMS verification code has been sent"));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@Valid @RequestBody LoginParam loginParam) {
         return null;
     }
 
