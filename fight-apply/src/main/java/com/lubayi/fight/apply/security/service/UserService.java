@@ -3,6 +3,7 @@ package com.lubayi.fight.apply.security.service;
 import com.lubayi.fight.apply.security.repository.dao.RoleDao;
 import com.lubayi.fight.apply.security.repository.dao.UserDao;
 import com.lubayi.fight.apply.security.repository.dao.UserRoleDao;
+import com.lubayi.fight.apply.security.repository.entity.LoginUser;
 import com.lubayi.fight.apply.security.repository.entity.SysRole;
 import com.lubayi.fight.apply.security.repository.entity.SysUser;
 import com.lubayi.fight.apply.security.repository.entity.SysUserRole;
@@ -76,7 +77,8 @@ public class UserService {
     public void loginUser(LoginParam loginParam) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginParam.getUserName(), loginParam.getPassword());
-        Authentication authenticate = authenticationManager.authenticate(authenticationToken);
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        LoginUser loginUser = (LoginUser) authentication.getPrincipal();
 
     }
 

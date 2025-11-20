@@ -1,6 +1,5 @@
 package com.lubayi.fight.apply.security.repository.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,10 +14,28 @@ import java.util.Collection;
  */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class LoginUser implements UserDetails {
 
+    private Long userId;
+
+    private String tokenId;
+
+    /**
+     * 登录时间
+     */
+    private Long loginTime;
+
+    /**
+     * 过期时间
+     */
+    private Long expireTime;
+
     private SysUser user;
+
+    public LoginUser(Long userId, SysUser user) {
+        this.userId = userId;
+        this.user = user;
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

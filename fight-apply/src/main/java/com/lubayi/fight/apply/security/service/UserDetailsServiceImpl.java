@@ -28,7 +28,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (userOptional.isPresent()) {
             throw new RuntimeException("");
         }
-        return new LoginUser(userOptional.get());
+        return new LoginUser(userOptional.get().getUserId(), userOptional.get());
     }
 
 }
