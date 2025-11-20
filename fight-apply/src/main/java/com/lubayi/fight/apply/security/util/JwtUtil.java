@@ -4,6 +4,8 @@ import com.lubayi.fight.apply.security.repository.entity.LoginUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -22,11 +24,15 @@ public class JwtUtil {
 
     private int expireTime;
 
+    private String header;
+
     private static final long MILLIS_MINUTE = 60 * 1000;
 
     private static final long MILLIS_MINUTE_TWENTY = 20 * 60 * 1000;
 
-    public static final String LOGIN_TOKEN_KEY = "login_tokens:";   // 登录用户 redis key
+    private static final String LOGIN_TOKEN_KEY = "login_tokens:";   // 登录用户 redis key
+
+    private static final String TOKEN_PREFIX = "Bearer ";   // 令牌前缀
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -56,6 +62,13 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("tokenId", tokenId); // 添加tokenId用于Redis缓存
         return Jwts.builder().claims(claims).signWith(key).compact();
+    }
+
+    public LoginUser getLoginUser(HttpServletRequest request) {
+        String token = request.getHeader(this.header);
+        if (StringUtils.isNotBlank(token) && token.startsWith(TOKEN_PREFIX)) {
+            token = token.replace(TOKEN_PREFIX, "");
+        }
     }
 
     /**

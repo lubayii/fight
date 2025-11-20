@@ -9,6 +9,7 @@ import com.lubayi.fight.apply.security.repository.entity.SysUser;
 import com.lubayi.fight.apply.security.repository.entity.SysUserRole;
 import com.lubayi.fight.apply.security.repository.param.LoginParam;
 import com.lubayi.fight.apply.security.repository.param.RegisterParam;
+import com.lubayi.fight.apply.security.util.JwtUtil;
 import com.lubayi.fight.apply.security.util.PasswordUtil;
 import com.lubayi.fight.apply.security.util.SmsCodeUtil;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,8 @@ public class UserService {
     private final SmsCodeUtil smsCodeUtil;
 
     private final AuthenticationManager authenticationManager;
+
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public void registerUser(RegisterParam registerParam) {
@@ -74,12 +77,12 @@ public class UserService {
         smsCodeUtil.cacheSmsCode(phone, smsCode);
     }
 
-    public void loginUser(LoginParam loginParam) {
+    public String loginUser(LoginParam loginParam) {
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginParam.getUserName(), loginParam.getPassword());
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-
+        return jwtUtil.createToken(loginUser);
     }
 
 }
