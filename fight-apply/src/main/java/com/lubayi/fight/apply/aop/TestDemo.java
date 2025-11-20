@@ -1,8 +1,10 @@
 package com.lubayi.fight.apply.aop;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
+
+import javax.crypto.SecretKey;
 
 /**
  * @author lubayi
@@ -10,12 +12,48 @@ import org.junit.jupiter.api.Test;
  */
 public class TestDemo {
 
+    private static final String SECRET = "0okmnji98uhbvgy76tfcxdr54eszaq109";
+
+    private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
+
     @Test
     public void getToken() {
-        String token = JWT.create()
-                .withClaim("client_id", "must")
-                .sign(Algorithm.HMAC256("0okmnji98uhbvgy7"));
-        System.out.println(token);  // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRfaWQiOiJtdXN0In0.lA1ZE3TPOh4xh4Oqx1jrlJVTo2yrcypu3cbQ7Z0Wpfk
+        String token = Jwts.builder()
+                .signWith(SECRET_KEY)
+                .claim("client_id", "must")
+                .compact();
+        System.out.println(token);  // eyJhbGciOiJIUzI1NiJ9.eyJjbGllbnRfaWQiOiJtdXN0In0.Y_QS72HnqhcpNBPTuZIbopDSPmd2o-8uicyin1Fyiwk
+    }
+
+    /**
+     * 测试 JWT 无法被篡改
+     * eyJhbGciOiJIUzI1NiJ9.eyJjbGllbnRfaWQiOiJtdXN0In0.Y_QS72HnqhcpNBPTuZIbopDSPmd2o-8uicyin1Fyiwk
+     * 的 Payload 内容为：{"client_id": "must"}
+     * 现在将 Payload 的内容改为：{"client_id": "maybe"}，第二段替换为 eyJjbGllbnRfaWQiOiAibWF5YmUifQ
+     */
+    @Test
+    public void testChangeJWT() {
+        // 报错：io.jsonwebtoken.security.SignatureException:
+        // JWT signature does not match locally computed signature.
+        // JWT validity cannot be asserted and should not be trusted.
+        System.out.println(
+                Jwts.parser().verifyWith(SECRET_KEY).build()
+                        .parseSignedClaims("eyJhbGciOiJIUzI1NiJ9.eyJjbGllbnRfaWQiOiAibWF5YmUifQ.Y_QS72HnqhcpNBPTuZIbopDSPmd2o-8uicyin1Fyiwk")
+                        .getPayload()
+        );
+        /*
+        如何防止 JWT 被篡改？
+        有了签名之后，即使 JWT 被泄露或者截获，黑客也没办法同时篡改 Signature、Header、Payload。
+        这是为什么呢？
+        因为服务端拿到 JWT 之后，会解析出其中包含的 Header、Payload 以及 Signature 。
+        服务端会根据 Header、Payload、密钥再次生成一个 Signature。
+        拿新生成的 Signature 和 JWT 中的 Signature 作对比，如果一样就说明 Header 和 Payload 没有被修改。
+
+        不过，如果服务端的秘钥也被泄露的话，黑客就可以同时篡改 Signature、Header、Payload 了。
+        黑客直接修改了 Header 和 Payload 之后，再重新生成一个 Signature 就可以了。
+
+        密钥一定保管好，一定不要泄露出去。JWT 安全的核心在于签名，签名安全的核心在密钥。
+         */
     }
 
 }
