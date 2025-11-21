@@ -1,6 +1,7 @@
-package com.lubayi.fight.apply.security.util;
+package com.lubayi.fight.apply.security.service;
 
 import com.lubayi.fight.apply.security.repository.entity.LoginUser;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.Resource;
@@ -18,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2025/11/20
  */
 @Component
-public class JwtUtil {
+public class TokenService {
 
     private String secretKeyBase64; // 这里存的是 Base64 编码后的密钥
 
@@ -52,6 +53,22 @@ public class JwtUtil {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
+    public LoginUser getLoginUser(HttpServletRequest request) {
+        String token = request.getHeader(this.header);
+        if (StringUtils.isNotBlank(token) && token.startsWith(TOKEN_PREFIX)) {
+            token = token.replace(TOKEN_PREFIX, "");
+        }
+
+        if (StringUtils.isNotBlank(token)) {
+            Claims claims = Jwts.parser().verifyWith(getSignKey()).build()
+                    .parseSignedClaims(token).getPayload();
+            String tokenId = (String) claims.get(LOGIN_TOKEN_KEY);
+            String tokenKey = getTokenKey(tokenId);
+            return (LoginUser) redisTemplate.opsForValue().get(tokenKey);
+        }
+        return null;
+    }
+
     public String createToken(LoginUser loginUser) {
         SecretKey key = getSignKey();
 
@@ -64,10 +81,15 @@ public class JwtUtil {
         return Jwts.builder().claims(claims).signWith(key).compact();
     }
 
-    public LoginUser getLoginUser(HttpServletRequest request) {
-        String token = request.getHeader(this.header);
-        if (StringUtils.isNotBlank(token) && token.startsWith(TOKEN_PREFIX)) {
-            token = token.replace(TOKEN_PREFIX, "");
+    /**
+     * 验证令牌有效期，相差不足20分钟，自动刷新缓存
+     * @param loginUser
+     */
+    public void verifyToken(LoginUser loginUser) {
+        long expireTime = loginUser.getExpireTime();
+        long currentTime = System.currentTimeMillis();
+        if (expireTime - currentTime <= MILLIS_MINUTE_TWENTY) {
+            refreshToken(loginUser);
         }
     }
 

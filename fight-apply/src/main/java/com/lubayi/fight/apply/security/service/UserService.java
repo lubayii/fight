@@ -9,7 +9,6 @@ import com.lubayi.fight.apply.security.repository.entity.SysUser;
 import com.lubayi.fight.apply.security.repository.entity.SysUserRole;
 import com.lubayi.fight.apply.security.repository.param.LoginParam;
 import com.lubayi.fight.apply.security.repository.param.RegisterParam;
-import com.lubayi.fight.apply.security.util.JwtUtil;
 import com.lubayi.fight.apply.security.util.PasswordUtil;
 import com.lubayi.fight.apply.security.util.SmsCodeUtil;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +36,7 @@ public class UserService {
 
     private final AuthenticationManager authenticationManager;
 
-    private final JwtUtil jwtUtil;
+    private final TokenService tokenService;
 
     @Transactional
     public void registerUser(RegisterParam registerParam) {
@@ -78,11 +77,14 @@ public class UserService {
     }
 
     public String loginUser(LoginParam loginParam) {
+        // 封装 Authentication 对象
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginParam.getUserName(), loginParam.getPassword());
+        // 通过 AuthenticationManager 的 authenticate 方法进行用户认证
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        // 在 Authentication 中获取用户信息
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        return jwtUtil.createToken(loginUser);
+        return tokenService.createToken(loginUser);
     }
 
 }
