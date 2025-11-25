@@ -2,11 +2,16 @@ package com.lubayi.fight.springsecurity.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Author: lubayi
@@ -14,6 +19,7 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager;
  * Time: 06:59
  */
 @Configuration
+@EnableWebSecurity
 public class WebSecurityConfig {
 
     @Bean
@@ -39,6 +45,22 @@ public class WebSecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/login").permitAll()
+                .anyRequest().authenticated())
+                .formLogin(login -> login.loginPage("/login").defaultSuccessUrl("/chat").permitAll())
+                .logout(LogoutConfigurer::permitAll);
+
+        return httpSecurity.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring().requestMatchers("/resources/static/**");
     }
 
 }
