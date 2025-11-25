@@ -45,21 +45,47 @@ public class MyHandler implements WebSocketHandler {
         if (message.getName() != null && message.getCommand() != null) {
             switch (message.getCommand()) {
                 case MessageKey.ENTER_COMMAND:
-                    sendMessageToRoomUsers(message.getRoomId(), new TextMessage());
+                    sendMessageToRoomUsers(message.getRoomId(),
+                            new TextMessage("【" + getNameFromSession(session) + "】加入了房间，欢迎！"));
                     break;
                 case MessageKey.MESSAGE_COMMAND:
                     if (message.getName().equals("all")) {
-                        sendMessageToRoomUsers(message.getRoomId(), new TextMessage());
+                        sendMessageToRoomUsers(message.getRoomId(),
+                                new TextMessage(getNameFromSession(session) + "说：" + message.getInfo()));
                     } else {
-
+                        sendMessageToUser(message.getRoomId(), message.getName(),
+                                new TextMessage(getNameFromSession(session) + "悄悄对你说：" + message.getInfo()));
                     }
                     break;
                 case MessageKey.LEAVE_COMMAND:
-                    sendMessageToRoomUsers(message.getRoomId(), new TextMessage());
+                    sendMessageToRoomUsers(message.getRoomId(),
+                            new TextMessage("【" + getNameFromSession(session) + "】离开了房间，欢迎下次再来！"));
                     break;
                 default:
                     break;
             }
+        }
+    }
+
+    @Override
+    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
+        System.out.println("连接出错！");
+        if (session.isOpen()) {
+            session.close();
+        }
+        Map<String, WebSocketSession> map = sUserMap.get(getRoomIdFromSession(session));
+        if (map != null) {
+            map.remove(getNameFromSession(session));
+        }
+    }
+
+    // 用来处理当用户离开房间后的信息销毁工作
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+        System.out.println("连接已关闭：" + closeStatus);
+        Map<String, WebSocketSession> map = sUserMap.get(getRoomIdFromSession(session));
+        if (map != null) {
+            map.remove(getNameFromSession(session));
         }
     }
 
@@ -82,14 +108,29 @@ public class MyHandler implements WebSocketHandler {
         return allSendSuccess;
     }
 
-    @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-
+    private boolean sendMessageToUser(String roomId, String name, TextMessage message) {
+        if (roomId == null || name == null || sUserMap.get(roomId) == null) {
+            return false;
+        }
+        WebSocketSession session = sUserMap.get(roomId).get(name);
+        if (!session.isOpen()) {
+            return false;
+        }
+        try {
+            session.sendMessage(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) throws Exception {
+    private String getNameFromSession(WebSocketSession session) {
+        return (String) session.getAttributes().get(MessageKey.KEY_WEBSOCKET_USERNAME);
+    }
 
+    private String getRoomIdFromSession(WebSocketSession session) {
+        return (String) session.getAttributes().get(MessageKey.KEY_ROOM_ID);
     }
 
     @Override
