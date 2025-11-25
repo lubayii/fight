@@ -10,7 +10,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
  * @date 2025/11/25
  */
 // 配置WebSocket
-@Configuration
+@Configuration("chatSocketConfig")
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
