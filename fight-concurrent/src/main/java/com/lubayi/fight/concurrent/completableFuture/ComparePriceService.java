@@ -1,8 +1,11 @@
 package com.lubayi.fight.concurrent.completableFuture;
 
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -81,6 +84,59 @@ public class ComparePriceService {
                 .get();
     }
 
+    public PriceResult getCheapestPlatAndPrice4(String product) {
+        // 构造自定义线程池
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+
+        return CompletableFuture.supplyAsync(
+                () -> HttpRequestMock.getMouXixiPrice(product), executor
+        ).thenCombineAsync(
+                CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouXixiDiscounts(product)),
+                this::computeRealPrice,
+                executor
+        ).join();
+    }
+
+    public PriceResult getCheapestPlatAndPrice5(String product) {
+        return CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouXixiPrice(product))
+                .thenCombine(
+                        CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouXixiDiscounts(product)),
+                        this::computeRealPrice
+                ).join();
+    }
+
+    public PriceResult comparePriceInOnePlat(List<String> products) {
+        return products.stream()
+                .map(product ->
+                        CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouBaoPrice(product))
+                                .thenCombine(
+                                        CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouBaoDiscounts(product)),
+                                        this::computeRealPrice
+                                ))
+                .map(CompletableFuture::join)
+                .sorted(Comparator.comparingInt(PriceResult::getRealPrice))
+                .findFirst()
+                .get();
+    }
+
+    public PriceResult comparePriceInOnePlat2(List<String> products) {
+        List<CompletableFuture<PriceResult>> completableFutures = products.stream()
+                .map(product ->
+                        CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouBaoPrice(product))
+                                .thenCombine(
+                                        CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouBaoDiscounts(product)),
+                                        this::computeRealPrice
+                                ))
+                .collect(Collectors.toList());
+
+        return completableFutures.stream()
+                .map(CompletableFuture::join)
+                .sorted(Comparator.comparingInt(PriceResult::getRealPrice))
+                .findFirst()
+                .get();
+    }
+
+
     private PriceResult computeRealPrice(PriceResult priceResult, int disCounts) {
         priceResult.setRealPrice(priceResult.getPrice() - disCounts);
         LogHelper.printLog(priceResult.getPlatform() + "最终价格计算完成：" + priceResult.getRealPrice());
@@ -97,11 +153,52 @@ public class ComparePriceService {
         // supplyAsync、runAsync 创建后便会立即执行，不需要手动调用触发
     }
 
+    public void testGetAndJoin(String product) {
+        // join 无需显式 try...catch...
+        PriceResult joinResult = CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouXixiPrice(product))
+                .join();
+
+        try {
+            // get 显式try...catch
+            PriceResult getResult = CompletableFuture.supplyAsync(() -> HttpRequestMock.getMouXixiPrice(product))
+                    .get(5L, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static void testExceptionHandle() {
+        // supplyAsync 抛出异常后，后面的 thenApply 并没有被执行。
+//        CompletableFuture.supplyAsync(() -> {
+//            throw new RuntimeException("supplyAsync exception occurred...");
+//        }).thenApply(obj -> {
+//            System.out.println("thenApply executed...");
+//            return obj;
+//        }).join();
+
+
+        // handle，与thenApply类似，区别点在于handle执行函数的入参有两个，
+        // 一个是CompletableFuture执行的实际结果，一个是是Throwable对象，这样如果前面执行出现异常的时候，可以通过handle获取到异常并进行处理。
+        CompletableFuture.supplyAsync(() -> {
+            throw new RuntimeException("supplyAsync exception occurred...");
+        }).handle((obj, e) -> {
+            if (e != null) {
+                System.out.println("thenApply executed，" + e.getMessage());
+            }
+            return obj;
+        }).join();  // 输出：thenApply executed，java.lang.RuntimeException: supplyAsync exception occurred...
+
+    }
+
 
     public static void main(String[] args) {
         ComparePriceService service = new ComparePriceService();
         long startTime = System.currentTimeMillis();
-        PriceResult result = service.getCheapestPlatAndPrice3("Iphone13");
+//        PriceResult result = service.getCheapestPlatAndPrice5("Iphone13");
+//        System.out.println("获取最优价格信息：" + result);
+
+        PriceResult result = service.comparePriceInOnePlat2(Arrays.asList("Iphone13黑色", "Iphone13白色", "Iphone红色"));
         System.out.println("获取最优价格信息：" + result);
 
         System.out.println("-----执行耗时： " + (System.currentTimeMillis() - startTime) + "ms  ------");
