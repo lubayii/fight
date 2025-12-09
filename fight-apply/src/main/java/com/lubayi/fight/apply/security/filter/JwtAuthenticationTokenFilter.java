@@ -20,7 +20,7 @@ import java.io.IOException;
  * Date: 2025/11/21
  * Time: 07:17
  */
-@Component
+//@Component
 @RequiredArgsConstructor
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 

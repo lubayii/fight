@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * @author lubayi
  * @date 2025/11/6
  */
-@EnableAsync
 @SpringBootApplication
 @MapperScan("com.lubayi.fight.apply.security.repository.mapper")
 public class ApplyApplication {
