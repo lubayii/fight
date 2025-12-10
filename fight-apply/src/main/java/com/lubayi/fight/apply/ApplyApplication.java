@@ -10,7 +10,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * @date 2025/11/6
  */
 @SpringBootApplication
-@MapperScan("com.lubayi.fight.apply.security.repository.mapper")
+@MapperScan({
+        "com.lubayi.fight.apply.security.repository.mapper",
+        "com.lubayi.fight.apply.transaction.mapper"
+})
 public class ApplyApplication {
 
     public static void main(String[] args) {
