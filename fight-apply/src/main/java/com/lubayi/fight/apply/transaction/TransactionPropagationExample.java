@@ -25,8 +25,9 @@ public class TransactionPropagationExample {
     /**
      * 结果：张三、李四 均插入
      * 外层方法没有开启事务
-     * 插入"张三"、"李四"方法在自己的事务中独立运行
-     * 虽然外层方法出现异常，但不影响内部插入"张三"、"李四"方法的事务
+     * 子方法 user1Service.addRequired(user1) 传播机制是 REQUIRED，新建事务 T1，当方法执行完后，事务提交，T1 关闭，此时无活跃事务
+     * 子方法 user2Service.addRequired(user2) 传播机制是 REQUIRED，因此时无活跃事务，新建事务 T2，当方法执行完后，事务提交，T2 提交后关闭
+     * 虽然外层方法出现异常，但内部子方法的事务都已提交，所以张三、李四都插入
      */
     public void notransaction_exception_required_required() {
         User1 user1 = new User1();
@@ -227,6 +228,69 @@ public class TransactionPropagationExample {
             user2Service.addRequiresNewException(user3);
         } catch (Exception e) {
             System.out.println("回滚");
+        }
+    }
+
+    // ===============================================NESTED================================================
+
+    public void notransaction_exception_nested_nested() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNested(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNested(user2);
+
+        throw new RuntimeException();
+    }
+
+    public void notransaction_nested_nested_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNested(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNestedException(user2);
+    }
+
+    @Transactional
+    public void transaction_exception_nested_nested() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNested(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNested(user2);
+
+        throw new RuntimeException();
+    }
+
+    @Transactional
+    public void transaction_nested_nested_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNested(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNestedException(user2);
+    }
+
+    @Transactional
+    public void transaction_nested_nested_exception_try() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNested(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        try {
+            user2Service.addNestedException(user2);
+        } catch (Exception e) {
+            System.out.println("方法回滚");
         }
     }
 
