@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication
 @MapperScan({
         "com.lubayi.fight.apply.security.repository.mapper",
-        "com.lubayi.fight.apply.transaction.mapper"
+        "com.lubayi.fight.apply.transaction"
 })
 public class ApplyApplication {
 

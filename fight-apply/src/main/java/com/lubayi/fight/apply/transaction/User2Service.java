@@ -21,9 +21,19 @@ public class User2Service {
         user2Mapper.insert(user);
     }
 
-
     @Transactional(propagation = Propagation.REQUIRED)
     public void addRequiredException(User2 user) {
+        user2Mapper.insert(user);
+        throw new RuntimeException();
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void addRequiresNew(User2 user) {
+        user2Mapper.insert(user);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void addRequiresNewException(User2 user) {
         user2Mapper.insert(user);
         throw new RuntimeException();
     }

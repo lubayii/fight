@@ -28,7 +28,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests(auth -> auth.requestMatchers("/business/**").permitAll());
+        httpSecurity.authorizeHttpRequests(auth -> auth.requestMatchers("/business/**", "/transaction/**").permitAll());
         return httpSecurity.build();
     }
 
