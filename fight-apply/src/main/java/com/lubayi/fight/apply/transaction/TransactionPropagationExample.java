@@ -233,6 +233,10 @@ public class TransactionPropagationExample {
 
     // ===============================================NESTED================================================
 
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务，此时 NESTED 等同于 REQUIRED，所以虽然外层方法出现异常，但内部子方法的事务都已提交，所以张三、李四都插入
+     */
     public void notransaction_exception_nested_nested() {
         User1 user1 = new User1();
         user1.setName("张三");
@@ -245,6 +249,11 @@ public class TransactionPropagationExample {
         throw new RuntimeException();
     }
 
+    /**
+     * 结果：张三插入、李四未插入
+     * 外层方法没有开启事务，此时 NESTED 等同于 REQUIRED
+     * 所以张三事务提交，成功插入；李四因异常回滚，未插入
+     */
     public void notransaction_nested_nested_exception() {
         User1 user1 = new User1();
         user1.setName("张三");
@@ -255,6 +264,13 @@ public class TransactionPropagationExample {
         user2Service.addNestedException(user2);
     }
 
+    /**
+     * 结果：张三、李四 均未插入
+     * 外层方法开启事务 T1
+     * 子方法 user1Service.addNested 传播机制是 NESTED，创建嵌套事务 T2
+     * 子方法 user2Service.addNested 传播机制是 NESTED，创建嵌套事务 T3
+     * 父事务 T1，因抛异常回滚，所以嵌套事务 T2、T3 也都回滚，数据未插入
+     */
     @Transactional
     public void transaction_exception_nested_nested() {
         User1 user1 = new User1();
@@ -268,6 +284,14 @@ public class TransactionPropagationExample {
         throw new RuntimeException();
     }
 
+    /**
+     * 结果：张三、李四均未插入
+     * 外层方法开启事务 T1
+     * 子方法 user1Service.addNested 传播机制是 NESTED，创建嵌套事务 T2
+     * 子方法 user2Service.addNestedException 传播机制是 NESTED，创建嵌套事务 T3
+     * 嵌套事务 T3 因异常回滚，所以李四未插入；
+     * 虽然嵌套事务回滚不影响父事务，但因子方法异常导致外层方法也异常，所以父事务回滚，父事务回滚导致嵌套事务 T2 也回滚，所以张三未插入
+     */
     @Transactional
     public void transaction_nested_nested_exception() {
         User1 user1 = new User1();
@@ -279,6 +303,14 @@ public class TransactionPropagationExample {
         user2Service.addNestedException(user2);
     }
 
+    /**
+     * 结果：张三插入、李四未插入
+     * 外层方法开启事务 T1
+     * 子方法 user1Service.addNested 传播机制是 NESTED，创建嵌套事务 T2
+     * 子方法 user2Service.addNestedException 传播机制是 NESTED，创建嵌套事务 T3
+     * 嵌套事务 T3 因异常回滚，所以李四未插入；
+     * 但嵌套事务回滚不影响父事务，且在父事务中异常被捕获，所以父事务正常提交，T2也正常提交，所以张三插入
+     */
     @Transactional
     public void transaction_nested_nested_exception_try() {
         User1 user1 = new User1();
@@ -292,6 +324,245 @@ public class TransactionPropagationExample {
         } catch (Exception e) {
             System.out.println("方法回滚");
         }
+    }
+
+    // ===============================================SUPPORTS================================================
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务
+     * 子方法的传播机制是 SUPPORTS，以非事务的方式执行，SQL执行完就会提交到数据库
+     * 所以外层方法抛异常，也影响不到子方法
+     */
+    public void notransaction_exception_supports_supports() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addSupports(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addSupports(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务
+     * 子方法的传播机制是 SUPPORTS，以非事务的方式执行，SQL执行完就会提交到数据库
+     * 所以即使子方法addSupportsException抛异常，但是在SQL执行后抛的异常，SQL执行完就提交到了数据库，所以李四也成功插入
+     */
+    public void notransaction_supports_supports_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addSupports(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addSupportsException(user2);
+    }
+
+    /**
+     * 结果：张三、李四均未插入
+     * 外层方法开启事务 T1
+     * 子方法的传播机制都是 SUPPORTS，所以都加入事务 T1
+     * 外层方法抛出异常，事务 T1 回滚，所以张三、李四均未插入
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void transaction_exception_supports_supports() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addSupports(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addSupports(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三、李四均未插入
+     * 外层方法开启事务 T1
+     * 子方法的传播机制都是 SUPPORTS，所以都加入事务 T1
+     * 子方法抛出异常，所以事务 T1 回滚，所以张三、李四均未插入
+     */
+    @Transactional(propagation = Propagation.REQUIRED)
+    public void transaction_supports_supports_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addSupports(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addSupportsException(user2);
+    }
+
+    // ===============================================MANDATORY================================================
+
+    /**
+     * 结果：张三未插入
+     * 外层方法没有开启事务，子方法的传播机制是 MANDATORY
+     * 因为外层方法没有开启事务，所以直接抛出异常
+     */
+    public void notransaction_mandatory() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addMandatory(user1);
+    }
+
+    /**
+     * 结果：张三、李四均未插入
+     * 外层方法开启事务 T1，子方法的传播机制是 MANDATORY，所以子方法也使用事务 T1
+     * 在外层方法中抛异常了，所以事务 T1 回滚，张三、李四均未成功插入
+     */
+    @Transactional
+    public void transaction_exception_mandatory_mandatory() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addMandatory(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addMandatory(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三、李四均未插入
+     * 外层方法开启事务 T1，子方法的传播机制是 MANDATORY，所以子方法也使用事务 T1
+     * 子方法抛异常了，所以事务 T1 回滚，张三、李四均未成功插入
+     */
+    @Transactional
+    public void transaction_mandatory_mandatory_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addMandatory(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addMandatoryException(user2);
+    }
+
+    // ===============================================NOT_SUPPORTED================================================
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务
+     * 子方法 user1Service.addRequired(user1) 的传播机制是 REQUIRED，新建事务 T1，方法执行完事务提交，并关闭事务
+     * 子方法 user2Service.addNotSupported(user2) 的传播机制是 NOT_SUPPORTED，以非事务方式执行，SQL执行完就提交到了数据库
+     */
+    public void notransaction_exception_required_notSupported() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addRequired(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNotSupported(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务
+     * 子方法 user1Service.addRequired(user1) 的传播机制是 REQUIRED，新建事务 T1，方法执行完事务提交，并关闭事务
+     * 子方法 user2Service.addNotSupported(user2) 的传播机制是 NOT_SUPPORTED，以非事务方式执行，SQL执行完就提交到了数据库，所以方法中抛异常也没有影响
+     */
+    public void notransaction_required_notSupported_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addRequired(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNotSupportedException(user2);
+    }
+
+    /**
+     * 结果：张三未插入、李四插入
+     * 外层方法开启事务 T1
+     * 子方法 user1Service.addRequired(user1) 的传播机制是 REQUIRED，所以加入事务 T1，而外层方法有异常，事务 T1 回滚，所以张三未插入
+     * 子方法 user2Service.addNotSupported(user2) 的传播机制是 NOT_SUPPORTED，以非事务方式执行，并且暂停事务T1
+     * SQL执行完就提交到了数据库，所以外层方法抛异常事务 T1 回滚，也不影响李四成功插入
+     */
+    @Transactional
+    public void transaction_exception_required_notSupported() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addRequired(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNotSupported(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三未插入、李四插入
+     * 外层方法开启事务 T1
+     * 子方法 user1Service.addRequired(user1) 的传播机制是 REQUIRED，所以加入事务 T1，
+     * 而子方法 addNotSupportedException 抛异常，外层方法感知到异常，事务 T1 回滚，所以张三未插入
+     * 子方法 user2Service.addNotSupported(user2) 的传播机制是 NOT_SUPPORTED，以非事务方式执行，并且暂停事务T1
+     * SQL执行完就提交到了数据库，所以在SQL执行完再抛异常，也不影响数据成功插入
+     */
+    @Transactional
+    public void transaction_required_notSupported_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addRequired(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNotSupportedException(user2);
+    }
+
+
+    // ===============================================NEVER================================================
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务，子方法的传播机制都是 NEVER，以非事务方式执行，SQL执行完就提交到数据库，所以数据成功插入
+     */
+    public void notransaction_exception_never_never() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNever(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNever(user2);
+
+        throw new RuntimeException();
+    }
+
+    /**
+     * 结果：张三、李四均插入
+     * 外层方法没有开启事务，子方法的传播机制都是 NEVER，以非事务方式执行，SQL执行完就提交到数据库
+     * addNeverException 在SQL执行完抛异常，也不影响数据成功插入
+     */
+    public void notransaction_never_never_exception() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNever(user1);
+
+        User2 user2 = new User2();
+        user2.setName("李四");
+        user2Service.addNeverException(user2);
+    }
+
+    /**
+     * 结果：张三未插入
+     * 外层方法开启事务 T1，子方法的传播机制是 NEVER，所以直接抛出异常
+     */
+    @Transactional
+    public void transaction_never() {
+        User1 user1 = new User1();
+        user1.setName("张三");
+        user1Service.addNever(user1);
     }
 
 }

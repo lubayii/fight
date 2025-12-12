@@ -31,4 +31,24 @@ public class User1Service {
         user1Mapper.insert(user);
     }
 
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void addSupports(User1 user) {
+        user1Mapper.insert(user);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void addMandatory(User1 user) {
+        user1Mapper.insert(user);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void addNotSupported(User1 user) {
+        user1Mapper.insert(user);
+    }
+
+    @Transactional(propagation = Propagation.NEVER)
+    public void addNever(User1 user) {
+        user1Mapper.insert(user);
+    }
+
 }
